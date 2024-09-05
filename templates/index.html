@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phishing Site Detector</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            min-height: 100vh; /* Ensure the body takes up full height */
+        }
+
+        .container {
+            width: 50%;
+            margin: 50px auto;
+            background: white;
+            padding: 20px;
+            box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+            position: relative; /* Ensure the container is positioned correctly */
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        input[type="text"], input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"] {
+            background-color: #5cb85c;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #4cae4c;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #d9534f;
+            color: white;
+            text-align: center;
+            display: none;
+        }
+
+        .result.safe {
+            background-color: #5cb85c;
+        }
+
+        #loading {
+            position: fixed; /* Use fixed positioning to keep it visible */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%); /* Center the indicator */
+            background-color: #f0ad4e; /* Bright yellow/orange background */
+            color: black; /* Black text */
+            text-align: center;
+            padding: 20px;
+            border-radius: 4px;
+            z-index: 1000; /* Ensure it's on top of other elements */
+            font-weight: bold;
+            font-size: 18px; /* Increase font size */
+            display: none; /* Initially hidden */
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Phishing Site Detector</h1>
+    <form id="urlForm">
+        <input type="text" id="url" name="url" placeholder="Enter a URL">
+        <input type="submit" value="Check">
+    </form>
+    <div id="result" class="result"></div>
+    <div id="loading">Please wait, checking...</div> <!-- Added loading indicator -->
+</div>
+
+<script>
+document.getElementById("urlForm").addEventListener("submit", function(event){
+    event.preventDefault();
+    
+    var url = document.getElementById("url").value;
+    var resultDiv = document.getElementById("result");
+    var loadingDiv = document.getElementById("loading");
+    
+    resultDiv.innerHTML = '';
+    loadingDiv.style.display = 'block'; // Show loading indicator
+
+    // Making the AJAX request to the backend
+    fetch('http://127.0.0.1:5000/predict', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: url }),
+    })
+    .then(response => response.json())
+    .then(data => {
+    console.log('Server response:', data); // Log the response to check the exact values
+
+    if (data.error) {
+        resultDiv.classList.remove('safe');
+        resultDiv.textContent = "Error: " + data.error;
+    } else if (data.prediction_text === "Phishing") {
+        resultDiv.classList.remove('safe');
+        resultDiv.textContent = "Warning: This URL is likely a phishing site!";
+    } else if (data.prediction_text === "Legitimate") {
+        resultDiv.classList.add('safe');
+        resultDiv.textContent = "This URL is safe.";
+    } else {
+        resultDiv.classList.remove('safe');
+        resultDiv.textContent = "Error: Unexpected response.";
+    }
+    resultDiv.style.display = 'block';
+    loadingDiv.style.display = 'none'; // Hide loading indicator
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+        resultDiv.classList.remove('safe');
+        resultDiv.textContent = "Error: Unable to connect to the server.";
+        resultDiv.style.display = 'block';
+        loadingDiv.style.display = 'none'; // Hide loading indicator
+    });
+});
+</script>
+
+</body>
+</html>
+
+
